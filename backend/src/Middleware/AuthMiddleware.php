@@ -15,15 +15,26 @@ class AuthMiddleware
 
     public function getTokenFromHeader()
     {
-        $headers = getallheaders();
-        
-        if (isset($headers['Authorization'])) {
-            $authHeader = $headers['Authorization'];
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+
+        // Normalize header keys to lowercase for robust lookup
+        $normalized = [];
+        foreach ($headers as $k => $v) {
+            $normalized[strtolower($k)] = $v;
+        }
+
+        // Also check $_SERVER fallback commonly used by some SAPIs/proxies
+        if (isset($_SERVER['HTTP_AUTHORIZATION']) && !isset($normalized['authorization'])) {
+            $normalized['authorization'] = $_SERVER['HTTP_AUTHORIZATION'];
+        }
+
+        if (isset($normalized['authorization'])) {
+            $authHeader = $normalized['authorization'];
             if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
                 return $matches[1];
             }
         }
-        
+
         return null;
     }
 

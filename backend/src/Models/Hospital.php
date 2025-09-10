@@ -57,6 +57,58 @@ class Hospital
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function create($data)
+    {
+        $query = "INSERT INTO " . $this->table_name . " 
+                  (name, latitude, longitude, ambulance_available, address, phone, emergency_contact) 
+                  VALUES (:name, :latitude, :longitude, :ambulance_available, :address, :phone, :emergency_contact)";
+
+        $stmt = $this->conn->prepare($query);
+        $available = isset($data['ambulance_available']) ? (bool)$data['ambulance_available'] : true;
+        $stmt->bindParam(":name", $data['name']);
+        $stmt->bindParam(":latitude", $data['latitude']);
+        $stmt->bindParam(":longitude", $data['longitude']);
+        $stmt->bindParam(":ambulance_available", $available, PDO::PARAM_BOOL);
+        $stmt->bindParam(":address", $data['address']);
+        $stmt->bindParam(":phone", $data['phone']);
+        $stmt->bindParam(":emergency_contact", $data['emergency_contact']);
+
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId();
+        }
+        return false;
+    }
+
+    public function updateById($id, $data)
+    {
+        $query = "UPDATE " . $this->table_name . " 
+                  SET name = :name, latitude = :latitude, longitude = :longitude, 
+                      ambulance_available = :ambulance_available, address = :address, 
+                      phone = :phone, emergency_contact = :emergency_contact, 
+                      updated_at = CURRENT_TIMESTAMP 
+                  WHERE id = :id";
+
+        $stmt = $this->conn->prepare($query);
+        $available = isset($data['ambulance_available']) ? (bool)$data['ambulance_available'] : false;
+        $stmt->bindParam(":name", $data['name']);
+        $stmt->bindParam(":latitude", $data['latitude']);
+        $stmt->bindParam(":longitude", $data['longitude']);
+        $stmt->bindParam(":ambulance_available", $available, PDO::PARAM_BOOL);
+        $stmt->bindParam(":address", $data['address']);
+        $stmt->bindParam(":phone", $data['phone']);
+        $stmt->bindParam(":emergency_contact", $data['emergency_contact']);
+        $stmt->bindParam(":id", $id);
+
+        return $stmt->execute();
+    }
+
+    public function deleteById($id)
+    {
+        $stmt = $this->conn->prepare("DELETE FROM " . $this->table_name . " WHERE id = :id");
+        $stmt->bindParam(":id", $id);
+        return $stmt->execute();
+    }
+
     public function updateAmbulanceAvailability($id, $available)
     {
         $query = "UPDATE " . $this->table_name . " 
@@ -130,6 +182,8 @@ class Hospital
                     n.*,
                     a.severity,
                     a.status as accident_status,
+                    a.location_lat,
+                    a.location_lng,
                     c.plate_number
                   FROM notifications n
                   JOIN accidents a ON n.accident_id = a.id

@@ -8,16 +8,32 @@ class Accident
 {
     private $conn;
     private $table_name = "accidents";
+    private $policeAlertModel;
+    private $logFile;
 
     public function __construct($db)
     {
         $this->conn = $db;
+        // Lazy include to avoid circular deps in autoload
+        if (class_exists('App\\Models\\PoliceAlert')) {
+            $this->policeAlertModel = new \App\Models\PoliceAlert($db);
+        }
+        $this->logFile = __DIR__ . '/../../storage/logs/app.log';
     }
 
     public function create($data)
     {
         // Find nearest hospital with available ambulance
         $nearestHospital = $this->findNearestHospital($data['location_lat'], $data['location_lng']);
+        $nearestHospitalId = $nearestHospital['id'] ?? null;
+        $estimatedDistance = isset($nearestHospital['distance_km']) ? round((float)$nearestHospital['distance_km'], 2) : null;
+
+        $this->debugLog('Accident.create input', [
+            'data' => $data,
+            'nearestHospital' => $nearestHospital,
+            'nearestHospitalId' => $nearestHospitalId,
+            'estimatedDistance' => $estimatedDistance
+        ]);
         
         $query = "INSERT INTO " . $this->table_name . " 
                   (car_id, location_lat, location_lng, accident_time, severity, status, description, nearest_hospital_id, estimated_distance) 
@@ -25,25 +41,55 @@ class Accident
 
         $stmt = $this->conn->prepare($query);
 
-        $stmt->bindParam(":car_id", $data['car_id']);
-        $stmt->bindParam(":location_lat", $data['location_lat']);
-        $stmt->bindParam(":location_lng", $data['location_lng']);
-        $stmt->bindParam(":accident_time", $data['accident_time']);
-        $stmt->bindParam(":severity", $data['severity']);
-        $stmt->bindParam(":status", $data['status']);
-        $stmt->bindParam(":description", $data['description']);
-        $stmt->bindParam(":nearest_hospital_id", $nearestHospital['id']);
-        $stmt->bindParam(":estimated_distance", $nearestHospital['distance']);
+        // Use bindValue for direct values instead of bindParam on array offsets
+        $stmt->bindValue(":car_id", (int)$data['car_id'], PDO::PARAM_INT);
+        $stmt->bindValue(":location_lat", $data['location_lat']);
+        $stmt->bindValue(":location_lng", $data['location_lng']);
+        $stmt->bindValue(":accident_time", $data['accident_time'] ?? date('Y-m-d H:i:s'));
+        $stmt->bindValue(":severity", $data['severity']);
+        $stmt->bindValue(":status", $data['status']);
+        $stmt->bindValue(":description", $data['description'] ?? '');
+        if ($nearestHospitalId === null) {
+            $stmt->bindValue(":nearest_hospital_id", null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(":nearest_hospital_id", (int)$nearestHospitalId, PDO::PARAM_INT);
+        }
+        if ($estimatedDistance === null) {
+            $stmt->bindValue(":estimated_distance", null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(":estimated_distance", $estimatedDistance);
+        }
 
-        if ($stmt->execute()) {
+        $execOk = $stmt->execute();
+        if ($execOk) {
             $accidentId = $this->conn->lastInsertId();
             
             // Create notification for nearest hospital
-            $this->createNotification($accidentId, $nearestHospital['id'], $data);
+            if ($nearestHospitalId !== null) {
+                $this->createNotification($accidentId, $nearestHospitalId, $data);
+            }
+            
+            // Create police alert to nearest police station (best-effort)
+            try {
+                $nearestPolice = $this->findNearestPoliceStation($data['location_lat'], $data['location_lng']);
+                if ($nearestPolice && $this->policeAlertModel) {
+                    $this->policeAlertModel->create([
+                        'accident_id' => $accidentId,
+                        'police_station_id' => $nearestPolice['id'],
+                        'message' => 'Accident reported. Plate ' . ($data['plate_number'] ?? '') . ', Severity: ' . ucfirst($data['severity']),
+                        'status' => 'sent'
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                // no-op
+            }
             
             return $accidentId;
         }
 
+        $this->debugLog('Accident.create execute failed', [
+            'pdo_error' => $stmt->errorInfo()
+        ]);
         return false;
     }
 
@@ -277,6 +323,33 @@ class Accident
         return $result;
     }
 
+    private function findNearestPoliceStation($lat, $lng)
+    {
+        $query = "SELECT 
+                        id,
+                        name,
+                        latitude,
+                        longitude,
+                        (
+                            6371 * acos(
+                                cos(radians(:lat)) * 
+                                cos(radians(latitude)) * 
+                                cos(radians(longitude) - radians(:lng)) + 
+                                sin(radians(:lat)) * 
+                                sin(radians(latitude))
+                            )
+                        ) AS distance_km
+                  FROM police_stations
+                  ORDER BY distance_km ASC
+                  LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":lat", $lat);
+        $stmt->bindParam(":lng", $lng);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     private function createNotification($accidentId, $hospitalId, $accidentData)
     {
         $message = "New accident reported near your location. Severity: " . ucfirst($accidentData['severity']);
@@ -317,5 +390,19 @@ class Accident
         $stmt->bindParam(":change_reason", $reason);
 
         return $stmt->execute();
+    }
+
+    private function debugLog($message, array $context = [])
+    {
+        try {
+            $dir = dirname($this->logFile);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0777, true);
+            }
+            $line = date('Y-m-d H:i:s') . ' [Accident] ' . $message . ' ' . json_encode($context) . PHP_EOL;
+            @file_put_contents($this->logFile, $line, FILE_APPEND);
+        } catch (\Throwable $e) {
+            // ignore logging errors
+        }
     }
 }

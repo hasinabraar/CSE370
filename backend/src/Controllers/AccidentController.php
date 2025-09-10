@@ -55,12 +55,19 @@ class AccidentController
                 ];
             }
 
-            // Check if car belongs to user
+            // Check if car belongs to user (allow admin)
             $car = $this->carModel->findById($data['car_id']);
-            if (!$car || $car['owner_id'] != $userId) {
+            if (!$car) {
                 return [
                     'success' => false,
-                    'message' => 'Car not found or access denied'
+                    'message' => 'Car not found'
+                ];
+            }
+            $user = $this->userModel->findById($userId);
+            if ($user['role'] !== 'admin' && $car['owner_id'] != $userId) {
+                return [
+                    'success' => false,
+                    'message' => 'Access denied for this car'
                 ];
             }
 
