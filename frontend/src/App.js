@@ -8,8 +8,10 @@ import Dashboard from './pages/Dashboard';
 import Accidents from './pages/Accidents';
 import Cars from './pages/Cars';
 import Hospitals from './pages/Hospitals';
+import Police from './pages/Police';
 import Reports from './pages/Reports';
 import Profile from './pages/Profile';
+import Admin from './pages/Admin';
 
 function App() {
   const { user, loading } = useAuth();
@@ -36,8 +38,10 @@ function App() {
           <Route path="accidents" element={<Accidents />} />
           <Route path="cars" element={<Cars />} />
           <Route path="hospitals" element={<Hospitals />} />
+          <Route path="police" element={<Police />} />
           <Route path="reports" element={<Reports />} />
           <Route path="profile" element={<Profile />} />
+          {user?.role === 'admin' && <Route path="admin" element={<Admin />} />}
         </Route>
         
         {/* Catch all route */}

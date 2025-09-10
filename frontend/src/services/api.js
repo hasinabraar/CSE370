@@ -28,9 +28,15 @@ api.interceptors.response.use(
     return response.data;
   },
   (error) => {
+    // Do not auto-logout on API business/validation failures
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Only logout if token is missing/expired and the endpoint is auth-protected
+      const msg = error.response?.data?.error || error.response?.data?.message || '';
+      const isAuthIssue = msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized');
+      if (isAuthIssue) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -75,6 +81,9 @@ export const accidentService = {
 
   getStatistics: (filters = {}) => {
     return api.get('/accidents/statistics', { params: filters });
+  },
+  reportAccident: (payload) => {
+    return api.post('/reportAccident', payload);
   },
 };
 
@@ -138,6 +147,26 @@ export const hospitalService = {
   markNotificationAsRead: (notificationId, hospitalId) => {
     return api.put(`/hospitals/${hospitalId}/notifications/${notificationId}/read`);
   },
+};
+
+// Police service
+export const policeService = {
+  getAlerts: (filters = {}) => {
+    return api.get('/police/alerts', { params: filters });
+  },
+  markAlertRead: (alertId, policeStationId) => {
+    return api.put(`/police/alerts/${alertId}/read`, null, { params: { police_station_id: policeStationId } });
+  },
+};
+
+// Admin service
+export const adminService = {
+  createHospital: (data) => api.post('/admin/hospitals', data),
+  updateHospital: (id, data) => api.put(`/admin/hospitals/${id}`, data),
+  deleteHospital: (id) => api.delete(`/admin/hospitals/${id}`),
+  createPoliceStation: (data) => api.post('/admin/police-stations', data),
+  updatePoliceStation: (id, data) => api.put(`/admin/police-stations/${id}`, data),
+  deletePoliceStation: (id) => api.delete(`/admin/police-stations/${id}`),
 };
 
 export default api;
