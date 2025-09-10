@@ -59,6 +59,10 @@ export const authService = {
   updateProfile: (profileData) => {
     return api.put('/auth/profile', profileData);
   },
+
+  changePassword: (passwordData) => {
+    return api.put('/auth/change-password', passwordData);
+  },
 };
 
 // Accident service
