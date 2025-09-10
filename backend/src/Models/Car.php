@@ -72,6 +72,27 @@ class Car
         return $stmt->execute();
     }
 
+    public function update($id, $data, $userId)
+    {
+        $query = "UPDATE " . $this->table_name . " 
+                  SET plate_number = :plate_number, 
+                      model = :model, 
+                      year = :year, 
+                      sensor_status = :sensor_status, 
+                      updated_at = CURRENT_TIMESTAMP 
+                  WHERE id = :id AND owner_id = :owner_id";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":plate_number", $data['plate_number']);
+        $stmt->bindParam(":model", $data['model']);
+        $stmt->bindParam(":year", $data['year']);
+        $stmt->bindParam(":sensor_status", $data['sensor_status']);
+        $stmt->bindParam(":id", $id);
+        $stmt->bindParam(":owner_id", $userId);
+
+        return $stmt->execute();
+    }
+
     public function checkPlateNumberExists($plateNumber, $excludeId = null)
     {
         $query = "SELECT id FROM " . $this->table_name . " WHERE plate_number = :plate_number";

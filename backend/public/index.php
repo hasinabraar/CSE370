@@ -81,6 +81,33 @@ try {
                 }
                 $user = $authMiddleware->validateToken($token);
                 echo json_encode($authController->getProfile($user['user_id']));
+            } elseif ($method === 'PUT') {
+                $token = $authMiddleware->getTokenFromHeader();
+                if (!$token) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'No token provided']);
+                    break;
+                }
+                $user = $authMiddleware->validateToken($token);
+                $data = json_decode(file_get_contents('php://input'), true);
+                echo json_encode($authController->updateProfile($user['user_id'], $data));
+            } else {
+                http_response_code(405);
+                echo json_encode(['error' => 'Method not allowed']);
+            }
+            break;
+
+        case '/auth/change-password':
+            if ($method === 'PUT') {
+                $token = $authMiddleware->getTokenFromHeader();
+                if (!$token) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'No token provided']);
+                    break;
+                }
+                $user = $authMiddleware->validateToken($token);
+                $data = json_decode(file_get_contents('php://input'), true);
+                echo json_encode($authController->changePassword($user['user_id'], $data));
             } else {
                 http_response_code(405);
                 echo json_encode(['error' => 'Method not allowed']);

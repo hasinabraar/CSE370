@@ -210,6 +210,64 @@ class AuthController
         }
     }
 
+    public function changePassword($userId, $data)
+    {
+        try {
+            // Validate required fields
+            if (empty($data['current_password']) || empty($data['new_password'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Current password and new password are required'
+                ];
+            }
+
+            // Get current user with password hash
+            $user = $this->userModel->findByIdWithPassword($userId);
+            if (!$user) {
+                return [
+                    'success' => false,
+                    'message' => 'User not found'
+                ];
+            }
+
+            // Verify current password
+            if (!$this->userModel->verifyPassword($data['current_password'], $user['password_hash'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Current password is incorrect'
+                ];
+            }
+
+            // Validate new password
+            if (strlen($data['new_password']) < 6) {
+                return [
+                    'success' => false,
+                    'message' => 'New password must be at least 6 characters long'
+                ];
+            }
+
+            // Update password
+            $success = $this->userModel->updatePassword($userId, $data['new_password']);
+            if (!$success) {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to update password'
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Password updated successfully'
+            ];
+
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to change password: ' . $e->getMessage()
+            ];
+        }
+    }
+
     public function getAllUsers($filters = [])
     {
         try {

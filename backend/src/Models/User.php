@@ -57,6 +57,16 @@ class User
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function findByIdWithPassword($id)
+    {
+        $query = "SELECT * FROM " . $this->table_name . " WHERE id = :id LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $id);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function verifyPassword($password, $hash)
     {
         return password_verify($password, $hash);
@@ -72,6 +82,20 @@ class User
 
         $stmt->bindParam(":name", $data['name']);
         $stmt->bindParam(":phone", $data['phone']);
+        $stmt->bindParam(":id", $id);
+
+        return $stmt->execute();
+    }
+
+    public function updatePassword($id, $newPassword)
+    {
+        $query = "UPDATE " . $this->table_name . " 
+                  SET password_hash = :password_hash, updated_at = CURRENT_TIMESTAMP 
+                  WHERE id = :id";
+
+        $stmt = $this->conn->prepare($query);
+        $password_hash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $stmt->bindParam(":password_hash", $password_hash);
         $stmt->bindParam(":id", $id);
 
         return $stmt->execute();

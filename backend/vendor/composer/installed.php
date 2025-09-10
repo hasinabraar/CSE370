@@ -3,7 +3,7 @@
         'name' => 'accident-detection-system/backend',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '6a3993eb4dc82b8124f5016d954dd76115239795',
+        'reference' => 'e225f2d3ba8c39cc59e23d5d2358bc9e7da2abca',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'accident-detection-system/backend' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '6a3993eb4dc82b8124f5016d954dd76115239795',
+            'reference' => 'e225f2d3ba8c39cc59e23d5d2358bc9e7da2abca',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -273,10 +273,10 @@ class Accident
                     longitude,
                     (
                         6371 * acos(
-                            cos(radians(:lat)) * 
+                            cos(radians(?)) * 
                             cos(radians(latitude)) * 
-                            cos(radians(longitude) - radians(:lng)) + 
-                            sin(radians(:lat)) * 
+                            cos(radians(longitude) - radians(?)) + 
+                            sin(radians(?)) * 
                             sin(radians(latitude))
                         )
                     ) AS distance_km
@@ -286,9 +286,7 @@ class Accident
                   LIMIT 1";
 
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":lat", $lat);
-        $stmt->bindParam(":lng", $lng);
-        $stmt->execute();
+        $stmt->execute([$lat, $lng, $lat]);
 
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -301,10 +299,10 @@ class Accident
                         longitude,
                         (
                             6371 * acos(
-                                cos(radians(:lat)) * 
+                                cos(radians(?)) * 
                                 cos(radians(latitude)) * 
-                                cos(radians(longitude) - radians(:lng)) + 
-                                sin(radians(:lat)) * 
+                                cos(radians(longitude) - radians(?)) + 
+                                sin(radians(?)) * 
                                 sin(radians(latitude))
                             )
                         ) AS distance_km
@@ -313,9 +311,7 @@ class Accident
                       LIMIT 1";
 
             $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(":lat", $lat);
-            $stmt->bindParam(":lng", $lng);
-            $stmt->execute();
+            $stmt->execute([$lat, $lng, $lat]);
 
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
         }
@@ -332,10 +328,10 @@ class Accident
                         longitude,
                         (
                             6371 * acos(
-                                cos(radians(:lat)) * 
+                                cos(radians(?)) * 
                                 cos(radians(latitude)) * 
-                                cos(radians(longitude) - radians(:lng)) + 
-                                sin(radians(:lat)) * 
+                                cos(radians(longitude) - radians(?)) + 
+                                sin(radians(?)) * 
                                 sin(radians(latitude))
                             )
                         ) AS distance_km
@@ -344,9 +340,7 @@ class Accident
                   LIMIT 1";
 
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":lat", $lat);
-        $stmt->bindParam(":lng", $lng);
-        $stmt->execute();
+        $stmt->execute([$lat, $lng, $lat]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
