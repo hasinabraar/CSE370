@@ -155,11 +155,32 @@ export const hospitalService = {
 
 // Police service
 export const policeService = {
+  // Police Alerts
   getAlerts: (filters = {}) => {
     return api.get('/police/alerts', { params: filters });
   },
   markAlertRead: (alertId, policeStationId) => {
     return api.put(`/police/alerts/${alertId}/read`, null, { params: { police_station_id: policeStationId } });
+  },
+  
+  // Police Stations
+  getStations: (filters = {}) => {
+    return api.get('/police/stations', { params: filters });
+  },
+  getStation: (id) => {
+    return api.get(`/police/stations/${id}`);
+  },
+  createStation: (stationData) => {
+    return api.post('/police/stations', stationData);
+  },
+  updateStation: (id, stationData) => {
+    return api.put(`/police/stations/${id}`, stationData);
+  },
+  deleteStation: (id) => {
+    return api.delete(`/police/stations/${id}`);
+  },
+  getNearbyStations: (lat, lng, radius = 50) => {
+    return api.get('/police/stations/nearby', { params: { lat, lng, radius } });
   },
 };
 
