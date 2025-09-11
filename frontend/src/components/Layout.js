@@ -11,7 +11,8 @@ import {
   FiLogOut, 
   FiMenu, 
   FiX,
-  FiBell
+  FiBell,
+  FiShield
 } from 'react-icons/fi';
 
 const Layout = () => {
@@ -25,9 +26,15 @@ const Layout = () => {
     { name: 'Accidents', href: '/accidents', icon: FiAlertTriangle },
     { name: 'Cars', href: '/cars', icon: FiTruck },
     { name: 'Hospitals', href: '/hospitals', icon: FiMapPin },
+    { name: 'Police', href: '/police', icon: FiShield },
     { name: 'Reports', href: '/reports', icon: FiBarChart2 },
     { name: 'Profile', href: '/profile', icon: FiUser },
   ];
+
+  // Add admin route if user is admin
+  if (user?.role === 'admin') {
+    navigation.splice(-1, 0, { name: 'Admin', href: '/admin', icon: FiUser });
+  }
 
   const handleLogout = () => {
     logout();
