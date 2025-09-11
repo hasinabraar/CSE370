@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
+import Navbar from './components/Navbar';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -27,13 +29,34 @@ function App() {
   return (
     <div className="App">
       <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
-        <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
+        {/* Public landing page */}
+        <Route path="/" element={
+          <>
+            <Navbar />
+            <Landing />
+          </>
+        } />
+        
+        {/* Public auth routes */}
+        <Route path="/login" element={
+          !user ? (
+            <>
+              <Navbar />
+              <Login />
+            </>
+          ) : <Navigate to="/dashboard" />
+        } />
+        <Route path="/register" element={
+          !user ? (
+            <>
+              <Navbar />
+              <Register />
+            </>
+          ) : <Navigate to="/dashboard" />
+        } />
         
         {/* Protected routes */}
-        <Route path="/" element={user ? <Layout /> : <Navigate to="/login" />}>
-          <Route index element={<Navigate to="/dashboard" />} />
+        <Route path="/" element={user ? <Layout /> : <Navigate to="/" />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="accidents" element={<Accidents />} />
           <Route path="cars" element={<Cars />} />
@@ -45,7 +68,7 @@ function App() {
         </Route>
         
         {/* Catch all route */}
-        <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
+        <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
       </Routes>
     </div>
   );
